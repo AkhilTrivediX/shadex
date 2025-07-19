@@ -1,0 +1,205 @@
+const fs = require("fs");
+const path = require("path");
+
+const CONTENT_DIR = path.join(__dirname, "./app/docs/_content");
+const OUTPUT_FILE = path.join(__dirname, "./utils/effectsRegistry.ts");
+
+// 🟢 Specify custom topic order here
+const CUSTOM_TOPIC_ORDER = [
+  "Installation",
+  "SxPixelate",
+  "SxASCII"
+];
+
+function pascalToReadable(name) {
+  return name[0].toUpperCase() + name.substring(1).replace(/([A-Z])/g, " $1").trim();
+}
+
+function getTopics(categoryPath, categoryName) {
+  const topics = [];
+
+  const topicFolders = fs.readdirSync(categoryPath, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory());
+
+  topicFolders.forEach(topicFolder => {
+    const topicName = topicFolder.name;
+    const topicPath = path.join(categoryPath, topicName);
+
+    const descriptionFile = path.join(topicPath, "description.tsx");
+    if (!fs.existsSync(descriptionFile)) {
+      console.warn(`⚠️ Skipping "${topicName}" (missing description.tsx)`);
+      return; // Skip topics without description
+    }
+
+    const optionsFile = path.join(topicPath, "options.json");
+    const hasOptions = fs.existsSync(optionsFile);
+
+    // Handle tabs from subfolders
+    const subDirs = fs.readdirSync(topicPath, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory());
+
+    const tabs = subDirs.map(subDir => {
+      const tabName = pascalToReadable(subDir.name);
+      const renders = fs.readdirSync(path.join(topicPath, subDir.name))
+        .filter(f => f.endsWith(".tsx"))
+        .map(file => {
+          const fileName = path.basename(file, ".tsx");
+          return {
+            name: pascalToReadable(fileName),
+            componentPath: `() => import("@/app/docs/_content/${categoryName}/${topicName}/${subDir.name}/${fileName}")`
+          };
+        });
+
+      return {
+        name: tabName,
+        renders
+      };
+    });
+
+    topics.push({
+      name: topicName,
+      descriptionPath: `() => import("@/app/docs/_content/${categoryName}/${topicName}/description")`,
+      ...(hasOptions && {
+        optionsPath: `() => import("@/app/docs/_content/${categoryName}/${topicName}/options.json")`
+      }),
+      ...(tabs.length > 0 && { tabs })
+    });
+  });
+
+  return topics;
+}
+
+function getCategories() {
+  const categories = [];
+
+  const categoryFolders = fs.readdirSync(CONTENT_DIR, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory());
+
+  categoryFolders.forEach(categoryFolder => {
+    const categoryName = categoryFolder.name;
+    const categoryPath = path.join(CONTENT_DIR, categoryName);
+
+    const topics = getTopics(categoryPath, categoryName);
+
+    categories.push({
+      name: categoryName,
+      topics
+    });
+  });
+
+  return categories;
+}
+
+// 🟢 Reorder categories & topics
+function reorderCategories(categories) {
+  const reordered = [];
+  const handledCategories = new Set();
+
+  CUSTOM_TOPIC_ORDER.forEach(topicName => {
+    const foundCategory = categories.find(cat => cat.topics.some(t => t.name === topicName));
+    if (!foundCategory) {
+      throw new Error(`❌ Topic "${topicName}" not found in any category.`);
+    }
+
+    // Ensure no category splitting
+    if (handledCategories.has(foundCategory.name) && reordered[reordered.length - 1].name !== foundCategory.name) {
+      throw new Error(`❌ Invalid order: Category "${foundCategory.name}" is split in CUSTOM_TOPIC_ORDER.`);
+    }
+
+    if (!handledCategories.has(foundCategory.name)) {
+      reordered.push({
+        name: foundCategory.name,
+        topics: []
+      });
+      handledCategories.add(foundCategory.name);
+    }
+
+    const targetCategory = reordered.find(c => c.name === foundCategory.name);
+    const topic = foundCategory.topics.find(t => t.name === topicName);
+    targetCategory.topics.push(topic);
+  });
+
+  // Add remaining topics (alphabetically) within already-handled categories
+  categories.forEach(category => {
+    if (handledCategories.has(category.name)) {
+      const targetCategory = reordered.find(c => c.name === category.name);
+      const remainingTopics = category.topics
+        .filter(t => !targetCategory.topics.some(existing => existing.name === t.name))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      targetCategory.topics.push(...remainingTopics);
+    }
+  });
+
+  // Add remaining categories (alphabetically) with their topics
+  const remainingCategories = categories
+    .filter(c => !handledCategories.has(c.name))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  reordered.push(...remainingCategories);
+
+  return reordered;
+}
+
+function stringifyValue(val, indent = 4) {
+  if (typeof val === "string" && val.startsWith("() => import(")) {
+    return val; // Return raw import function without quotes
+  }
+  return JSON.stringify(val, null, indent);
+}
+
+function serialize(obj, indent = 2) {
+  if (Array.isArray(obj)) {
+    return `[\n${obj.map(item => `${" ".repeat(indent)}${serialize(item, indent + 2)}`).join(",\n")}\n${" ".repeat(indent - 2)}]`;
+  }
+  if (typeof obj === "object" && obj !== null) {
+    const entries = Object.entries(obj)
+      .map(([key, val]) => `${" ".repeat(indent)}${key}: ${serialize(val, indent + 2)}`);
+    return `{\n${entries.join(",\n")}\n${" ".repeat(indent - 2)}}`;
+  }
+  return stringifyValue(obj, indent);
+}
+
+function generateRegistryFile(categories) {
+  const flatDocIndex = categories
+    .flatMap(category => category.topics.map(topic => topic.name));
+
+  const content = `/**
+ * This file is auto-generated by scripts/generateRegistry.js
+ * DO NOT EDIT MANUALLY.
+ */
+
+export interface TabRender {
+  name: string;
+  componentPath: () => Promise<any>;
+}
+
+export interface TopicTab {
+  name: string;
+  renders: TabRender[];
+}
+
+export interface Topic {
+  name: string;
+  descriptionPath: () => Promise<any>;
+  optionsPath?: () => Promise<any>;
+  tabs?: TopicTab[];
+}
+
+export interface Category {
+  name: string;
+  topics: Topic[]; 
+}
+
+export const docsRegistry: Category[] = ${serialize(categories)};
+
+export const flatDocIndex: string[] = ${JSON.stringify(flatDocIndex, null, 2)};
+`;
+
+  fs.writeFileSync(OUTPUT_FILE, content, "utf-8");
+  console.log(`✅ Registry generated at ${OUTPUT_FILE}`);
+}
+
+const originalCategories = getCategories();
+const reorderedCategories = reorderCategories(originalCategories);
+generateRegistryFile(reorderedCategories);
