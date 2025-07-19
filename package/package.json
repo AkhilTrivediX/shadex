@@ -1,0 +1,74 @@
+{
+  "name": "shadex",
+  "version": "0.1.1",
+  "description": "🌊 React plug-and-play shader library for making better visual website.",
+  "author": {
+    "name": "Akhil Trivedi",
+    "email": "akhiltrivedix@gmail.com",
+    "url": "https://akhiltrivedi.me"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/AkhilTrivediX/shadex#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AkhilTrivediX/shadex.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AkhilTrivediX/shadex/issues",
+    "email": "akhiltrivedix@gmail.com"
+  },
+  "keywords": [
+    "react",
+    "three.js",
+    "shaders",
+    "react-three-fiber",
+    "postprocessing",
+    "webgl",
+    "glsl",
+    "3d",
+    "graphics",
+    "react library",
+    "visual effects"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "module": "./dist/index.js",
+  "types": "./dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    "three": ">=0.152.0",
+    "@react-three/fiber": ">=8.0.0",
+    "@react-three/drei": ">=9.0.0",
+    "@react-three/postprocessing": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": false
+    }
+  },
+  "dependencies": {
+    "postprocessing": ">=6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "tsup": "^8.5.0",
+    "@types/react": "^19.1.8",
+    "@types/node": "^24.0.14",
+    "react": "^19.1.0"
+  }
+}
