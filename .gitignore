@@ -1,0 +1,4 @@
+web/node_modules
+web/.env.local
+package/node_modules
+package/.env.local
