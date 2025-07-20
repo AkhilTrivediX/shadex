@@ -6,21 +6,16 @@ import { BlendFunction, Effect, EffectPass } from 'postprocessing';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 
-
 type effectOptions = {
     pixelSize?:[number, number],
     threshold?:number,
     backgroundColor?: [number, number, number, number],
     monochrome?:boolean, 
     monochromeColor?:[number, number, number]
-    contrast?:number
+    contrast?:number,
+    dynamicPixelWidth?:boolean
 }
 
-/**
- * Pixelate Effect
- * Adapted from "Post-Processing Shaders as a Creative Medium" by Maxime Heckel
- * Original: https://blog.maximeheckel.com/posts/post-processing-as-a-creative-medium
- */
  class PixelateEffectImpl extends Effect {
   constructor({
     pixelSize = [5, 10],
@@ -28,7 +23,8 @@ type effectOptions = {
     backgroundColor = [0.0, 0.0, 0.0, 0.0],
     monochrome = false,
     monochromeColor = [1.0, 1.0, 1.0],
-    contrast = 2.0
+    contrast = 2.0,
+    dynamicPixelWidth = false
   }) {
     const fragmentShader = `
       uniform vec2 pixelSize;
@@ -37,6 +33,7 @@ type effectOptions = {
       uniform bool monochrome;
       uniform vec3 monochromeColor;
       uniform float contrast;
+      uniform bool dynamicPixelWidth;
 
 
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
@@ -45,7 +42,7 @@ type effectOptions = {
           vec4 color = texture2D(inputBuffer, snappedUV);
 
           float luma = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-          float lineWidth = smoothstep(1.0, 0.0, pow(1.0 - luma, contrast));
+          float lineWidth = dynamicPixelWidth ? smoothstep(1.0, 0.0, pow(1.0 - luma, contrast)) : 1.0;
 
           vec2 cellUV = fract(uv / blockUV);
           bool showBar = cellUV.y > 0.05 && cellUV.y < 0.95 && cellUV.x < lineWidth && luma > threshold;
@@ -61,6 +58,7 @@ type effectOptions = {
       ['monochrome', new THREE.Uniform(monochrome)],
       ['monochromeColor', new THREE.Uniform(new THREE.Vector3(...monochromeColor))],
       ['contrast', new THREE.Uniform(contrast)],
+      ['dynamicPixelWidth', new THREE.Uniform(dynamicPixelWidth)],
     ]);
 
     super('PixelateEffect', fragmentShader, { uniforms: uniforms as Map<string, THREE.Uniform<any>>,blendFunction: BlendFunction.NORMAL });
@@ -74,10 +72,10 @@ export { PixelateEffectImpl as SxPixelateEffectImpl };
 
 export default function SxPixelate(props:effectOptions) {
   const {camera} = useThree();
-  const pixelateEffect = useMemo(() => new PixelateEffectImpl(props), [props]);
+  const asciiEffect = useMemo(() => new PixelateEffectImpl(props), [props]);
   return (
     <primitive
-      object={new EffectPass(camera, pixelateEffect)}
+      object={new EffectPass(camera, asciiEffect)}
       attachArray="passes"
     />
   );

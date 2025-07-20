@@ -8,11 +8,11 @@ import { ShadexProvider, useShadex } from "../hooks/ShadexContext";
 import { useOutOfViewport } from "../hooks/useOutOfViewport";
 
 
-export default function Shadex({src,width, height, 
+export default function Shadex({src,className, style,
                                 children, controls, mesh,
                                 lightIntensity = 1.0, loader, pauseRender,
                                 playWhenHidden, videoOptions
-                            }:{src?:string, width:number | string, height:number | string,
+                            }:{src?:string, className?:string, style?: React.CSSProperties,
                                children?: React.JSX.Element | React.JSX.Element[],
                                controls?:boolean, mesh?: React.ReactNode, lightIntensity?:number,
                                loader?: React.ReactNode | ((progress: number) => React.ReactNode),
@@ -35,7 +35,7 @@ export default function Shadex({src,width, height,
         if(sceneProgress === 100) setReadyToPause(true)
     },[sceneProgress])
 
-    const content = (<div className="Shadex" ref={containerRef} style={{width: (typeof width === 'string' ? width : `${width}px`), height: (typeof height === 'string' ? height : `${height}px`)}} onClick={()=>{
+    const content = (<div className={"Shadex "+className} style={style} ref={containerRef} onClick={()=>{
         if(isSrcVideo(src) && !videoUnmuted) {
             setVideoUnmuted(true);
         }
