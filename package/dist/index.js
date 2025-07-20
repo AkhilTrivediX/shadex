@@ -5,6 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { useLoader } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import { useVideoTexture } from "@react-three/drei";
 import { jsx, jsxs } from "react/jsx-runtime";
 function ImagePlane({
   url,
@@ -20,6 +21,45 @@ function ImagePlane({
     /* @__PURE__ */ jsx("planeGeometry", { args: [planeWidth, planeHeight] }),
     material ? /* @__PURE__ */ jsx("primitive", { object: material, attach: "material" }) : /* @__PURE__ */ jsx("meshBasicMaterial", { map: texture, toneMapped: false, side: THREE.DoubleSide })
   ] });
+}
+function VideoPlane({
+  url,
+  width,
+  height,
+  zoom,
+  unmuted,
+  loop = true,
+  autoplay = true
+}) {
+  const texture = useVideoTexture(url, {
+    muted: !unmuted,
+    loop,
+    start: autoplay,
+    preload: "auto"
+  });
+  const planeWidth = width / zoom;
+  const planeHeight = height / zoom;
+  useEffect(() => {
+    texture.source.data.muted = !unmuted;
+    texture.source.data.play();
+    return () => {
+      texture.source.data.pause();
+    };
+  }, [texture, unmuted]);
+  return /* @__PURE__ */ jsxs("mesh", { children: [
+    /* @__PURE__ */ jsx("planeGeometry", { args: [planeWidth, planeHeight] }),
+    /* @__PURE__ */ jsx(
+      "meshBasicMaterial",
+      {
+        map: texture,
+        toneMapped: false,
+        side: THREE.DoubleSide
+      }
+    )
+  ] });
+}
+function isSrcVideo(src) {
+  return src && /\.(mp4|webm|ogg)$/i.test(src);
 }
 function useElementSize() {
   const ref = useRef(null);
@@ -49,8 +89,8 @@ function getNormalizedPosition(position, container, previousNormalizedPosition) 
 var clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
 // src/components/Shadex.tsx
-import { OrbitControls } from "@react-three/drei";
-import { Suspense } from "react";
+import { Html, OrbitControls, useProgress } from "@react-three/drei";
+import { Suspense, useEffect as useEffect4, useState as useState4 } from "react";
 import { EffectComposer } from "@react-three/postprocessing";
 
 // src/hooks/ShadexContext.tsx
@@ -75,25 +115,77 @@ var ShadexProvider = ({ children }) => {
   return /* @__PURE__ */ jsx2(ShadexContext.Provider, { value: { mousePosition }, children });
 };
 
+// src/hooks/useOutOfViewport.ts
+import { useState as useState3, useEffect as useEffect3 } from "react";
+function useOutOfViewport(ref) {
+  const [isOutOfViewport, setIsOutOfViewport] = useState3(false);
+  useEffect3(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsOutOfViewport(!entry.isIntersecting);
+      },
+      {
+        root: null,
+        rootMargin: "0px",
+        threshold: 0.1
+        // Trigger when 10% is visible
+      }
+    );
+    observer.observe(ref.current);
+    return () => {
+      observer.disconnect();
+    };
+  }, [ref]);
+  return isOutOfViewport;
+}
+
 // src/components/Shadex.tsx
 import { Fragment, jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
-function Shadex({ src, width, height, children, controls, mesh, lightIntensity = 1 }) {
+function Shadex({
+  src,
+  width,
+  height,
+  children,
+  controls,
+  mesh,
+  lightIntensity = 1,
+  loader,
+  pauseRender,
+  playWhenHidden,
+  videoOptions
+}) {
   if (!src && !mesh) throw new Error("src or mesh props are required for effect to be applied.");
   const [containerRef, { width: pxWidth, height: pxHeight }] = useElementSize();
   const zoom = 100;
   const is3DMode = !src;
   const shadexCtx = useShadex();
+  const { progress: sceneProgress } = useProgress();
+  const isOutOfViewport = useOutOfViewport(containerRef);
+  const [readyToPause, setReadyToPause] = useState4(false);
+  const [videoUnmuted, setVideoUnmuted] = useState4(false);
   if (!shadexCtx && process.env.NODE_ENV === "development") {
     console.warn("We recommend wrapping children in ShadexProvider in root layout.tsx for better performance.");
   }
-  const content = /* @__PURE__ */ jsx3("div", { className: "Shadex", ref: containerRef, style: { width: typeof width === "string" ? width : `${width}px`, height: typeof height === "string" ? height : `${height}px` }, children: /* @__PURE__ */ jsxs2(Canvas, { orthographic: !is3DMode, camera: is3DMode ? { position: [0, 0, 5], fov: 75 } : { position: [0, 0, 5], zoom }, gl: { alpha: true }, style: { width: "100%", height: "100%" }, children: [
+  useEffect4(() => {
+    if (sceneProgress === 100) setReadyToPause(true);
+  }, [sceneProgress]);
+  const content = /* @__PURE__ */ jsx3("div", { className: "Shadex", ref: containerRef, style: { width: typeof width === "string" ? width : `${width}px`, height: typeof height === "string" ? height : `${height}px` }, onClick: () => {
+    if (isSrcVideo(src) && !videoUnmuted) {
+      setVideoUnmuted(true);
+    }
+  }, children: /* @__PURE__ */ jsxs2(Canvas, { orthographic: !is3DMode, camera: is3DMode ? { position: [0, 0, 5], fov: 75 } : { position: [0, 0, 5], zoom }, gl: { alpha: true }, style: { width: "100%", height: "100%" }, frameloop: readyToPause && (pauseRender || !playWhenHidden && isOutOfViewport) ? "never" : isSrcVideo(src) ? "always" : "demand", children: [
     controls && /* @__PURE__ */ jsx3(OrbitControls, { enablePan: false }),
-    /* @__PURE__ */ jsxs2(Suspense, { fallback: null, children: [
+    /* @__PURE__ */ jsxs2(Suspense, { fallback: /* @__PURE__ */ jsx3(Html, { center: true, className: "w-full h-full", children: !loader ? /* @__PURE__ */ jsxs2("div", { children: [
+      "Loading... ",
+      sceneProgress,
+      "%"
+    ] }) : typeof loader === "function" ? loader(sceneProgress) : loader }), children: [
       /* @__PURE__ */ jsxs2(Fragment, { children: [
         /* @__PURE__ */ jsx3("ambientLight", { intensity: lightIntensity }),
         /* @__PURE__ */ jsx3("directionalLight", { position: [5, 10, 5], intensity: 1.5 })
       ] }),
-      src ? /* @__PURE__ */ jsx3(ImagePlane, { url: src, width: pxWidth, height: pxHeight, zoom }) : null,
+      src ? !isSrcVideo(src) ? /* @__PURE__ */ jsx3(ImagePlane, { url: src, width: pxWidth, height: pxHeight, zoom }) : /* @__PURE__ */ jsx3(VideoPlane, { url: src, width: pxWidth, height: pxHeight, zoom, unmuted: !videoOptions?.muted && videoUnmuted, loop: videoOptions?.loop, autoplay: videoOptions?.start }) : null,
       mesh,
       children && /* @__PURE__ */ jsx3(EffectComposer, { children })
     ] })
@@ -568,17 +660,17 @@ function SxPixelate(props) {
 }
 
 // src/hooks/useIsClient.ts
-import { useEffect as useEffect4, useState as useState3 } from "react";
+import { useEffect as useEffect6, useState as useState5 } from "react";
 function useIsClient() {
-  const [isClient, setIsClient] = useState3(false);
-  useEffect4(() => {
+  const [isClient, setIsClient] = useState5(false);
+  useEffect6(() => {
     setIsClient(true);
   }, []);
   return isClient;
 }
 
 // src/utils/ExtrudeSVG.tsx
-import { Suspense as Suspense2, useMemo as useMemo6 } from "react";
+import { useMemo as useMemo6 } from "react";
 import { useLoader as useLoader2, useThree as useThree6 } from "@react-three/fiber";
 import * as THREE7 from "three";
 import { SVGLoader } from "three/examples/jsm/Addons.js";
@@ -631,7 +723,7 @@ function ExtrudeSVG(props) {
     });
     return allShapes;
   }, [paths]);
-  return /* @__PURE__ */ jsx9(Suspense2, { fallback: null, children: /* @__PURE__ */ jsx9(ViExtrudeMesh, { shapes, ...rest }) });
+  return /* @__PURE__ */ jsx9(ViExtrudeMesh, { shapes, ...rest });
 }
 export {
   ExtrudeSVG,
@@ -643,8 +735,10 @@ export {
   SxEngrave,
   SxNotebook,
   SxPixelate,
+  VideoPlane,
   clamp,
   getNormalizedPosition,
+  isSrcVideo,
   useElementSize,
   useIsClient,
   useShadex

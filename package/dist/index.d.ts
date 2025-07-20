@@ -2,7 +2,7 @@ import * as react_jsx_runtime from 'react/jsx-runtime';
 import * as THREE from 'three';
 import * as react from 'react';
 
-declare function Shadex({ src, width, height, children, controls, mesh, lightIntensity }: {
+declare function Shadex({ src, width, height, children, controls, mesh, lightIntensity, loader, pauseRender, playWhenHidden, videoOptions }: {
     src?: string;
     width: number | string;
     height: number | string;
@@ -10,6 +10,15 @@ declare function Shadex({ src, width, height, children, controls, mesh, lightInt
     controls?: boolean;
     mesh?: React.ReactNode;
     lightIntensity?: number;
+    loader?: React.ReactNode | ((progress: number) => React.ReactNode);
+    pauseRender?: boolean;
+    playWhenHidden?: boolean;
+    videoOptions?: {
+        muted?: boolean;
+        loop?: boolean;
+        start?: boolean;
+        preload?: string;
+    };
 }): react_jsx_runtime.JSX.Element;
 
 type effectOptions$3 = {
@@ -92,6 +101,16 @@ declare function ImagePlane({ url, material, width, height, zoom }: {
     height: number;
     zoom: number;
 }): react_jsx_runtime.JSX.Element;
+declare function VideoPlane({ url, width, height, zoom, unmuted, loop, autoplay, }: {
+    url: string;
+    width: number;
+    height: number;
+    zoom: number;
+    unmuted?: boolean;
+    loop?: boolean;
+    autoplay?: boolean;
+}): react_jsx_runtime.JSX.Element;
+declare function isSrcVideo(src: string | undefined): boolean;
 declare function useElementSize<T extends HTMLElement>(): readonly [react.RefObject<T>, {
     width: number;
     height: number;
@@ -108,4 +127,4 @@ declare function getNormalizedPosition(position: {
 };
 declare const clamp: (value: number, min: number, max: number) => number;
 
-export { ExtrudeSVG, ImagePlane, Shadex, ShadexProvider, SxASCII, SxDisplace, SxEngrave, SxNotebook, SxPixelate, clamp, getNormalizedPosition, useElementSize, useIsClient, useShadex };
+export { ExtrudeSVG, ImagePlane, Shadex, ShadexProvider, SxASCII, SxDisplace, SxEngrave, SxNotebook, SxPixelate, VideoPlane, clamp, getNormalizedPosition, isSrcVideo, useElementSize, useIsClient, useShadex };

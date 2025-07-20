@@ -33,6 +33,62 @@ export function ImagePlane({
   );
 }
 
+
+import { useVideoTexture } from "@react-three/drei";
+
+export function VideoPlane({
+  url,
+  width,
+  height,
+  zoom,
+  unmuted,
+  loop = true,
+  autoplay = true,
+}: {
+  url: string;
+  width: number;
+  height: number;
+  zoom: number;
+  unmuted?: boolean;
+  loop?: boolean;
+  autoplay?: boolean;
+}) {
+  const texture = useVideoTexture(url, {
+    muted: !unmuted,
+    loop,
+    start: autoplay,
+    preload: "auto",
+  });
+
+  const planeWidth = width / zoom;
+  const planeHeight = height / zoom;
+
+  useEffect(()=>{
+    texture.source.data.muted = !unmuted
+    texture.source.data.play();
+    return () => {
+    texture.source.data.pause();
+  };
+  },[texture, unmuted])
+
+  return (
+    <mesh>
+      <planeGeometry args={[planeWidth, planeHeight]} />
+      <meshBasicMaterial
+        map={texture}
+        toneMapped={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+
+export function isSrcVideo(src: string | undefined) {
+  return src && /\.(mp4|webm|ogg)$/i.test(src);
+}
+
+
 export function useElementSize<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -67,3 +123,4 @@ export function getNormalizedPosition(position: {x: number, y: number}, containe
 
 export const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(value, max));
+

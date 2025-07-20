@@ -19,9 +19,7 @@ export default function ComponentPreview({children, codes}:{children: React.Reac
                 </button>
             </LayoutGroup>
         </div>
-        <AnimatePresence mode="wait">
-            {currentTab==0 && <motion.div key="preview" initial={{y: -50, opacity: 0}} animate={{y: 0, opacity: 1}} exit={{y: -50, opacity: 0}} transition={{duration: 0.1}} className="rounded-lg border-2 border-muted flex items-center overflow-clip">{children}</motion.div>}
-            {currentTab==1 && <motion.div key="code" initial={{y: -50, opacity: 0}} animate={{y: 0, opacity: 1}} exit={{y: -50, opacity: 0}} transition={{duration: 0.1}}><CodeTabs lang="tsx" codes={codes}/></motion.div>}
-        </AnimatePresence>
+            <motion.div key="preview" style={{display: currentTab==0?"block":"none"}} initial={{y: -50, opacity: 0}} animate={{y: 0, opacity: 1}} exit={{y: -50, opacity: 0}} transition={{duration: 0.1}} className="rounded-lg border-2 border-muted flex items-center overflow-clip">{children}</motion.div>
+            <motion.div key="code" style={{display: currentTab==1?"block":"none"}} initial={{y: -50, opacity: 0}} animate={{y: 0, opacity: 1}} exit={{y: -50, opacity: 0}} transition={{duration: 0.1}}><CodeTabs lang="tsx" codes={codes}/></motion.div>
     </div>
 }
