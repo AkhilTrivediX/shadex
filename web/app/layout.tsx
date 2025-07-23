@@ -32,7 +32,6 @@ export default function RootLayout({
           className={`${quicksand.variable} ${jetBrainsMono.variable} antialiased h-full`}
         >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <Navbar/>
             {children}
           </ThemeProvider>
         </body>

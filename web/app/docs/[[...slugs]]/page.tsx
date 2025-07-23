@@ -9,7 +9,7 @@ import {  ComponentType, useEffect, useState } from "react";
 export default function Page(){
     const [count, setCount] = useState(0)
     const {currentTopic, previousTopic, pageDetails} = useDocRoute();
-    return <main className="w-full px-6 py-8">
+    return <main className="w-full px-6 py-8 max-h-screen overflow-scroll no-scrollbar">
         <DocHeading current={currentTopic} previous={previousTopic}/>
         <DocTabs pageDetails={pageDetails}/>
     </main>

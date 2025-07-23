@@ -2,17 +2,17 @@ import * as react_jsx_runtime from 'react/jsx-runtime';
 import * as THREE from 'three';
 import * as react from 'react';
 
-declare function Shadex({ src, width, height, children, controls, mesh, lightIntensity, loader, pauseRender, playWhenHidden, videoOptions }: {
+declare function Shadex({ src, className, style, children, controls, mesh, lightIntensity, loader, pauseRender, renderOnHidden, videoOptions }: {
     src?: string;
-    width: number | string;
-    height: number | string;
+    className?: string;
+    style?: React.CSSProperties;
     children?: React.JSX.Element | React.JSX.Element[];
     controls?: boolean;
     mesh?: React.ReactNode;
     lightIntensity?: number;
     loader?: React.ReactNode | ((progress: number) => React.ReactNode);
     pauseRender?: boolean;
-    playWhenHidden?: boolean;
+    renderOnHidden?: boolean;
     videoOptions?: {
         muted?: boolean;
         loop?: boolean;
@@ -63,6 +63,7 @@ type effectOptions = {
     monochrome?: boolean;
     monochromeColor?: [number, number, number];
     contrast?: number;
+    dynamicPixelWidth?: boolean;
 };
 declare function SxPixelate(props: effectOptions): react_jsx_runtime.JSX.Element;
 

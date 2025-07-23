@@ -89,7 +89,7 @@ function getNormalizedPosition(position, container, previousNormalizedPosition) 
 var clamp = (value, min, max) => Math.max(min, Math.min(value, max));
 
 // src/components/Shadex.tsx
-import { Html, OrbitControls, useProgress } from "@react-three/drei";
+import { OrbitControls, useProgress } from "@react-three/drei";
 import { Suspense, useEffect as useEffect4, useState as useState4 } from "react";
 import { EffectComposer } from "@react-three/postprocessing";
 
@@ -144,19 +144,20 @@ function useOutOfViewport(ref) {
 import { Fragment, jsx as jsx3, jsxs as jsxs2 } from "react/jsx-runtime";
 function Shadex({
   src,
-  width,
-  height,
+  className,
+  style,
   children,
   controls,
   mesh,
   lightIntensity = 1,
   loader,
   pauseRender,
-  playWhenHidden,
+  renderOnHidden,
   videoOptions
 }) {
   if (!src && !mesh) throw new Error("src or mesh props are required for effect to be applied.");
   const [containerRef, { width: pxWidth, height: pxHeight }] = useElementSize();
+  const [canvasReady, setCanvasReady] = useState4(false);
   const zoom = 100;
   const is3DMode = !src;
   const shadexCtx = useShadex();
@@ -170,26 +171,86 @@ function Shadex({
   useEffect4(() => {
     if (sceneProgress === 100) setReadyToPause(true);
   }, [sceneProgress]);
-  const content = /* @__PURE__ */ jsx3("div", { className: "Shadex", ref: containerRef, style: { width: typeof width === "string" ? width : `${width}px`, height: typeof height === "string" ? height : `${height}px` }, onClick: () => {
+  useEffect4(() => {
+    if (isOutOfViewport) setCanvasReady(false);
+  }, [isOutOfViewport]);
+  const content = /* @__PURE__ */ jsxs2("div", { className: "Shadex " + className, style: { ...style, position: "relative" }, ref: containerRef, onClick: () => {
     if (isSrcVideo(src) && !videoUnmuted) {
       setVideoUnmuted(true);
     }
-  }, children: /* @__PURE__ */ jsxs2(Canvas, { orthographic: !is3DMode, camera: is3DMode ? { position: [0, 0, 5], fov: 75 } : { position: [0, 0, 5], zoom }, gl: { alpha: true }, style: { width: "100%", height: "100%" }, frameloop: readyToPause && (pauseRender || !playWhenHidden && isOutOfViewport) ? "never" : isSrcVideo(src) ? "always" : "demand", children: [
-    controls && /* @__PURE__ */ jsx3(OrbitControls, { enablePan: false }),
-    /* @__PURE__ */ jsxs2(Suspense, { fallback: /* @__PURE__ */ jsx3(Html, { center: true, className: "w-full h-full", children: !loader ? /* @__PURE__ */ jsxs2("div", { children: [
-      "Loading... ",
-      sceneProgress,
-      "%"
-    ] }) : typeof loader === "function" ? loader(sceneProgress) : loader }), children: [
-      /* @__PURE__ */ jsxs2(Fragment, { children: [
-        /* @__PURE__ */ jsx3("ambientLight", { intensity: lightIntensity }),
-        /* @__PURE__ */ jsx3("directionalLight", { position: [5, 10, 5], intensity: 1.5 })
-      ] }),
-      src ? !isSrcVideo(src) ? /* @__PURE__ */ jsx3(ImagePlane, { url: src, width: pxWidth, height: pxHeight, zoom }) : /* @__PURE__ */ jsx3(VideoPlane, { url: src, width: pxWidth, height: pxHeight, zoom, unmuted: !videoOptions?.muted && videoUnmuted, loop: videoOptions?.loop, autoplay: videoOptions?.start }) : null,
-      mesh,
-      children && /* @__PURE__ */ jsx3(EffectComposer, { children })
+  }, children: [
+    (isOutOfViewport || !canvasReady) && /* @__PURE__ */ jsxs2(
+      "div",
+      {
+        style: {
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          justifyContent: "center",
+          alignItems: "center",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          opacity: 0.5
+        },
+        className: "text-foreground fill-foreground",
+        children: [
+          /* @__PURE__ */ jsx3("div", { className: "font-bold uppercase text-xl", children: "Shadex" }),
+          /* @__PURE__ */ jsx3(
+            "svg",
+            {
+              width: "50px",
+              height: "50px",
+              version: "1.1",
+              id: "L9",
+              xmlns: "http://www.w3.org/2000/svg",
+              xmlnsXlink: "http://www.w3.org/1999/xlink",
+              x: "0px",
+              y: "0px",
+              viewBox: "0 0 100 100",
+              enableBackground: "new 0 0 0 0",
+              xmlSpace: "preserve",
+              children: /* @__PURE__ */ jsx3("path", { d: "M73,50c0-12.7-10.3-23-23-23S27,37.3,27,50 M30.9,50c0-10.5,8.5-19.1,19.1-19.1S69.1,39.5,69.1,50", children: /* @__PURE__ */ jsx3(
+                "animateTransform",
+                {
+                  attributeName: "transform",
+                  attributeType: "XML",
+                  type: "rotate",
+                  dur: "1s",
+                  from: "0 50 50",
+                  to: "360 50 50",
+                  repeatCount: "indefinite"
+                }
+              ) })
+            }
+          ),
+          sceneProgress != 100 && /* @__PURE__ */ jsxs2("p", { style: { fontSize: "20px", fontFamily: "monospace" }, children: [
+            sceneProgress,
+            "%"
+          ] })
+        ]
+      }
+    ),
+    (renderOnHidden || !isOutOfViewport) && /* @__PURE__ */ jsxs2(Canvas, { orthographic: !is3DMode, camera: is3DMode ? { position: [0, 0, 5], fov: 75 } : { position: [0, 0, 5], zoom }, gl: { alpha: true }, style: { width: "100%", height: "100%" }, frameloop: readyToPause && pauseRender ? "never" : isSrcVideo(src) ? "always" : "demand", onCreated: ({ gl }) => {
+      requestAnimationFrame(() => {
+        setCanvasReady(true);
+      });
+    }, children: [
+      controls && /* @__PURE__ */ jsx3(OrbitControls, { enablePan: false }),
+      /* @__PURE__ */ jsxs2(Suspense, { fallback: null, children: [
+        /* @__PURE__ */ jsxs2(Fragment, { children: [
+          /* @__PURE__ */ jsx3("ambientLight", { intensity: lightIntensity }),
+          /* @__PURE__ */ jsx3("directionalLight", { position: [5, 10, 5], intensity: 1.5 })
+        ] }),
+        src ? !isSrcVideo(src) ? /* @__PURE__ */ jsx3(ImagePlane, { url: src, width: pxWidth, height: pxHeight, zoom }) : /* @__PURE__ */ jsx3(VideoPlane, { url: src, width: pxWidth, height: pxHeight, zoom, unmuted: !videoOptions?.muted && videoUnmuted, loop: videoOptions?.loop, autoplay: videoOptions?.start }) : null,
+        mesh,
+        children && /* @__PURE__ */ jsx3(EffectComposer, { children })
+      ] })
     ] })
-  ] }) });
+  ] });
   if (shadexCtx) return content;
   else return /* @__PURE__ */ jsx3(ShadexProvider, { children: content });
 }
@@ -609,7 +670,8 @@ var PixelateEffectImpl = class extends Effect5 {
     backgroundColor = [0, 0, 0, 0],
     monochrome = false,
     monochromeColor = [1, 1, 1],
-    contrast = 2
+    contrast = 2,
+    dynamicPixelWidth = false
   }) {
     const fragmentShader = `
       uniform vec2 pixelSize;
@@ -618,6 +680,7 @@ var PixelateEffectImpl = class extends Effect5 {
       uniform bool monochrome;
       uniform vec3 monochromeColor;
       uniform float contrast;
+      uniform bool dynamicPixelWidth;
 
 
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
@@ -626,7 +689,7 @@ var PixelateEffectImpl = class extends Effect5 {
           vec4 color = texture2D(inputBuffer, snappedUV);
 
           float luma = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-          float lineWidth = smoothstep(1.0, 0.0, pow(1.0 - luma, contrast));
+          float lineWidth = dynamicPixelWidth ? smoothstep(1.0, 0.0, pow(1.0 - luma, contrast)) : 1.0;
 
           vec2 cellUV = fract(uv / blockUV);
           bool showBar = cellUV.y > 0.05 && cellUV.y < 0.95 && cellUV.x < lineWidth && luma > threshold;
@@ -640,7 +703,8 @@ var PixelateEffectImpl = class extends Effect5 {
       ["backgroundColor", new THREE6.Uniform(new THREE6.Vector4(...backgroundColor))],
       ["monochrome", new THREE6.Uniform(monochrome)],
       ["monochromeColor", new THREE6.Uniform(new THREE6.Vector3(...monochromeColor))],
-      ["contrast", new THREE6.Uniform(contrast)]
+      ["contrast", new THREE6.Uniform(contrast)],
+      ["dynamicPixelWidth", new THREE6.Uniform(dynamicPixelWidth)]
     ]);
     super("PixelateEffect", fragmentShader, { uniforms, blendFunction: BlendFunction5.NORMAL });
   }
@@ -649,11 +713,11 @@ var PixelateEffectImpl = class extends Effect5 {
 };
 function SxPixelate(props) {
   const { camera } = useThree5();
-  const pixelateEffect = useMemo5(() => new PixelateEffectImpl(props), [props]);
+  const asciiEffect = useMemo5(() => new PixelateEffectImpl(props), [props]);
   return /* @__PURE__ */ jsx8(
     "primitive",
     {
-      object: new EffectPass5(camera, pixelateEffect),
+      object: new EffectPass5(camera, asciiEffect),
       attachArray: "passes"
     }
   );
