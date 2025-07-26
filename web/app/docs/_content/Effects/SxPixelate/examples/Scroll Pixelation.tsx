@@ -96,7 +96,8 @@ export default function ScrollPixelationDemo() {
   }
 
   return <main className="w-full aspect-[16/13]">
-    <ComponentPreview id="ScrollPixelationDemo" title="ScrollPixelationDemo.tsx" codes={`import { Shadex, SxPixelate } from "shadex"
+    <ComponentPreview id="ScrollPixelationDemo" title="ScrollPixelationDemo.tsx" codes={`"use client";
+import { Shadex, SxPixelate } from "shadex"
 function ScrollPixelationDemo() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [pixelSize, setPixelSize] = useState<[number, number]>([${maxPixelSize.join(", ")}]);

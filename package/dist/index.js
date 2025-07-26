@@ -269,7 +269,8 @@ var ASCIIEffectImpl = class extends Effect {
     backgroundColor = [0, 0, 0, 0],
     // Default transparent
     minLuma = 0,
-    maxLuma = 1
+    maxLuma = 1,
+    showBlocks = false
   }) {
     const fragmentShader = `
     uniform float uPixelSize;
@@ -278,6 +279,7 @@ var ASCIIEffectImpl = class extends Effect {
     uniform vec4 uBackgroundColor;
     uniform float uMinLuma;
     uniform float uMaxLuma;
+    uniform bool uShowBlocks;
     void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec2 normalizedPixelSize = uPixelSize / resolution;
         vec2 uvPixel = normalizedPixelSize * floor(uv / normalizedPixelSize);
@@ -305,7 +307,7 @@ var ASCIIEffectImpl = class extends Effect {
         
         outputColor = vec4(character * color.rgb * (normalizedLuma + 0.01), 1.0); 
         if(outputColor == vec4(0.0, 0.0, 0.0, 1.0)) {
-            outputColor = uBackgroundColor;
+            outputColor = uShowBlocks ? color : uBackgroundColor;
         }
     }
 
@@ -333,7 +335,8 @@ var ASCIIEffectImpl = class extends Effect {
       ["uCharCount", new THREE2.Uniform(new THREE2.Vector2(asciiChars.length, 1))],
       ["uBackgroundColor", new THREE2.Uniform(new THREE2.Vector4(...backgroundColor))],
       ["uMinLuma", new THREE2.Uniform(minLuma)],
-      ["uMaxLuma", new THREE2.Uniform(maxLuma)]
+      ["uMaxLuma", new THREE2.Uniform(maxLuma)],
+      ["uShowBlocks", new THREE2.Uniform(showBlocks)]
     ]);
     super("ASCIIEffect", fragmentShader, { uniforms, blendFunction: BlendFunction.NORMAL });
   }
@@ -674,37 +677,37 @@ var PixelateEffectImpl = class extends Effect5 {
     dynamicPixelWidth = false
   }) {
     const fragmentShader = `
-      uniform vec2 pixelSize;
-      uniform float threshold;
-      uniform vec4 backgroundColor;
-      uniform bool monochrome;
-      uniform vec3 monochromeColor;
-      uniform float contrast;
-      uniform bool dynamicPixelWidth;
+      uniform vec2 uPixelSize;
+      uniform float uThreshold;
+      uniform vec4 uBackgroundColor;
+      uniform bool uMonochrome;
+      uniform vec3 uMonochromeColor;
+      uniform float uContrast;
+      uniform bool uDynamicPixelWidth;
 
 
       void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-          vec2 blockUV = pixelSize / resolution;
+          vec2 blockUV = uPixelSize / resolution;
           vec2 snappedUV = blockUV * floor(uv / blockUV);
           vec4 color = texture2D(inputBuffer, snappedUV);
 
           float luma = dot(color.rgb, vec3(0.2126, 0.7152, 0.0722));
-          float lineWidth = dynamicPixelWidth ? smoothstep(1.0, 0.0, pow(1.0 - luma, contrast)) : 1.0;
+          float lineWidth = uDynamicPixelWidth ? smoothstep(1.0, 0.0, pow(1.0 - luma, uContrast)) : 1.0;
 
           vec2 cellUV = fract(uv / blockUV);
-          bool showBar = cellUV.y > 0.05 && cellUV.y < 0.95 && cellUV.x < lineWidth && luma > threshold;
+          bool showBar = cellUV.y > 0.05 && cellUV.y < 0.95 && cellUV.x < lineWidth && luma > uThreshold;
 
-          outputColor = showBar ? (monochrome ? vec4(monochromeColor * luma,1.0) : color) : backgroundColor;
+          outputColor = showBar ? (uMonochrome ? vec4(uMonochromeColor * luma,1.0) : color) : uBackgroundColor;
       }
     `;
     const uniforms = /* @__PURE__ */ new Map([
-      ["pixelSize", new THREE6.Uniform(new THREE6.Vector2(...pixelSize))],
-      ["threshold", new THREE6.Uniform(threshold)],
-      ["backgroundColor", new THREE6.Uniform(new THREE6.Vector4(...backgroundColor))],
-      ["monochrome", new THREE6.Uniform(monochrome)],
-      ["monochromeColor", new THREE6.Uniform(new THREE6.Vector3(...monochromeColor))],
-      ["contrast", new THREE6.Uniform(contrast)],
-      ["dynamicPixelWidth", new THREE6.Uniform(dynamicPixelWidth)]
+      ["uPixelSize", new THREE6.Uniform(new THREE6.Vector2(...pixelSize))],
+      ["uThreshold", new THREE6.Uniform(threshold)],
+      ["uBackgroundColor", new THREE6.Uniform(new THREE6.Vector4(...backgroundColor))],
+      ["uMonochrome", new THREE6.Uniform(monochrome)],
+      ["uMonochromeColor", new THREE6.Uniform(new THREE6.Vector3(...monochromeColor))],
+      ["uContrast", new THREE6.Uniform(contrast)],
+      ["uDynamicPixelWidth", new THREE6.Uniform(dynamicPixelWidth)]
     ]);
     super("PixelateEffect", fragmentShader, { uniforms, blendFunction: BlendFunction5.NORMAL });
   }

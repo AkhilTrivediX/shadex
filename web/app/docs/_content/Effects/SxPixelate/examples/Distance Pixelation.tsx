@@ -74,7 +74,8 @@ export default function DistancePixelationExample(){
         mesh: {element:<ExtrudeSVG src="/next.svg" depth={10}/> as React.ReactNode & {text:string}, text: `<ExtrudeSVG src="/next.svg" depth={10}/>`}
     }
     return <main className="w-full aspect-[16/13]">
-        <ComponentPreview id="DistancePixelationDemo" title="PixelateDemo.tsx" codes={`import { Shadex, SxPixelate } from "shadex"
+        <ComponentPreview id="DistancePixelationDemo" title="PixelateDemo.tsx" codes={`"use client";
+import { Shadex, SxPixelate } from "shadex"
 function BasicUsageDemo(){
     return (
         <Shadex className="w-[500px] h-[350px]" ${mediaSource!=="mesh"?"src=\"/"+media[mediaSource]+"\"":"mesh={"+media.mesh.text+"}"} ${mediaSource=="mesh"?"controls":""}>

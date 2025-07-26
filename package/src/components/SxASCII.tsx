@@ -12,6 +12,7 @@ type effectOptions = {
   backgroundColor?: [number, number, number, number]; // RGBA background color
   minLuma?: number; // Minimum luminance threshold
   maxLuma?: number; // Maximum luminance threshold
+  showBlocks?: boolean;
 };
 
 /**
@@ -26,7 +27,8 @@ class ASCIIEffectImpl extends Effect {
     asciiChars = '.:-=+*#%@', // Default ASCII set
     backgroundColor = [0.0, 0.0, 0.0, 0.0], // Default transparent
     minLuma = 0.0,
-    maxLuma = 1.0
+    maxLuma = 1.0,
+    showBlocks = false
   }) {
     const fragmentShader = `
     uniform float uPixelSize;
@@ -35,6 +37,7 @@ class ASCIIEffectImpl extends Effect {
     uniform vec4 uBackgroundColor;
     uniform float uMinLuma;
     uniform float uMaxLuma;
+    uniform bool uShowBlocks;
     void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
         vec2 normalizedPixelSize = uPixelSize / resolution;
         vec2 uvPixel = normalizedPixelSize * floor(uv / normalizedPixelSize);
@@ -62,7 +65,7 @@ class ASCIIEffectImpl extends Effect {
         
         outputColor = vec4(character * color.rgb * (normalizedLuma + 0.01), 1.0); 
         if(outputColor == vec4(0.0, 0.0, 0.0, 1.0)) {
-            outputColor = uBackgroundColor;
+            outputColor = uShowBlocks ? color : uBackgroundColor;
         }
     }
 
@@ -98,6 +101,7 @@ class ASCIIEffectImpl extends Effect {
       ['uBackgroundColor', new THREE.Uniform(new THREE.Vector4(...backgroundColor))],
       ['uMinLuma', new THREE.Uniform(minLuma)],
       ['uMaxLuma', new THREE.Uniform(maxLuma)],
+      ['uShowBlocks', new THREE.Uniform(showBlocks)],
     ]);
 
     super('ASCIIEffect', fragmentShader, { uniforms, blendFunction: BlendFunction.NORMAL });

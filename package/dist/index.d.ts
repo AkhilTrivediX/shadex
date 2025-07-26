@@ -27,6 +27,7 @@ type effectOptions$3 = {
     backgroundColor?: [number, number, number, number];
     minLuma?: number;
     maxLuma?: number;
+    showBlocks?: boolean;
 };
 declare function SxASCII(props: effectOptions$3): react_jsx_runtime.JSX.Element;
 

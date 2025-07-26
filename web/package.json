@@ -22,7 +22,7 @@
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
     "react-use-measure": "^2.1.7",
-    "shadex": "^0.1.6",
+    "shadex": "^0.1.10",
     "shiki": "^3.8.1",
     "tailwind-merge": "^3.3.1"
   },

@@ -3,21 +3,9 @@
  * DO NOT EDIT MANUALLY.
  */
 
-export interface TabRender {
-  name: string;
-  componentPath: () => Promise<any>;
-}
-
-export interface TopicTab {
-  name: string;
-  renders: TabRender[];
-}
-
 export interface Topic {
   name: string;
   descriptionPath: () => Promise<any>;
-  optionsPath?: () => Promise<any>;
-  tabs?: TopicTab[];
 }
 
 export interface Category {
@@ -40,35 +28,11 @@ export const docsRegistry: Category[] = [
     topics: [
       {
         name: "SxPixelate",
-        descriptionPath: () => import("@/app/docs/_content/Effects/SxPixelate/description"),
-        optionsPath: () => import("@/app/docs/_content/Effects/SxPixelate/options.json"),
-        tabs: [
-          {
-            name: "Examples",
-            renders: [
-              {
-                name: "Basic  Usage",
-                componentPath: () => import("@/app/docs/_content/Effects/SxPixelate/examples/Basic Usage")
-              }
-            ]
-          }
-        ]
+        descriptionPath: () => import("@/app/docs/_content/Effects/SxPixelate/description")
       },
       {
         name: "SxASCII",
-        descriptionPath: () => import("@/app/docs/_content/Effects/SxASCII/description"),
-        optionsPath: () => import("@/app/docs/_content/Effects/SxASCII/options.json"),
-        tabs: [
-          {
-            name: "Examples",
-            renders: [
-              {
-                name: "Example Basic",
-                componentPath: () => import("@/app/docs/_content/Effects/SxASCII/examples/ExampleBasic")
-              }
-            ]
-          }
-        ]
+        descriptionPath: () => import("@/app/docs/_content/Effects/SxASCII/description")
       }
     ]
   }

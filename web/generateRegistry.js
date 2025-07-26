@@ -28,41 +28,13 @@ function getTopics(categoryPath, categoryName) {
     const descriptionFile = path.join(topicPath, "description.tsx");
     if (!fs.existsSync(descriptionFile)) {
       console.warn(`⚠️ Skipping "${topicName}" (missing description.tsx)`);
-      return; // Skip topics without description
+      return;
     }
 
-    const optionsFile = path.join(topicPath, "options.json");
-    const hasOptions = fs.existsSync(optionsFile);
-
-    // Handle tabs from subfolders
-    const subDirs = fs.readdirSync(topicPath, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory());
-
-    const tabs = subDirs.map(subDir => {
-      const tabName = pascalToReadable(subDir.name);
-      const renders = fs.readdirSync(path.join(topicPath, subDir.name))
-        .filter(f => f.endsWith(".tsx"))
-        .map(file => {
-          const fileName = path.basename(file, ".tsx");
-          return {
-            name: pascalToReadable(fileName),
-            componentPath: `() => import("@/app/docs/_content/${categoryName}/${topicName}/${subDir.name}/${fileName}")`
-          };
-        });
-
-      return {
-        name: tabName,
-        renders
-      };
-    });
 
     topics.push({
       name: topicName,
       descriptionPath: `() => import("@/app/docs/_content/${categoryName}/${topicName}/description")`,
-      ...(hasOptions && {
-        optionsPath: `() => import("@/app/docs/_content/${categoryName}/${topicName}/options.json")`
-      }),
-      ...(tabs.length > 0 && { tabs })
     });
   });
 
@@ -169,21 +141,9 @@ function generateRegistryFile(categories) {
  * DO NOT EDIT MANUALLY.
  */
 
-export interface TabRender {
-  name: string;
-  componentPath: () => Promise<any>;
-}
-
-export interface TopicTab {
-  name: string;
-  renders: TabRender[];
-}
-
 export interface Topic {
   name: string;
   descriptionPath: () => Promise<any>;
-  optionsPath?: () => Promise<any>;
-  tabs?: TopicTab[];
 }
 
 export interface Category {
